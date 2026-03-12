@@ -30,13 +30,13 @@ This branch (`pr6-updates`) is based on the `v0.2.0` branch from the `upstream` 
 ## Key Spec Concepts
 
 - **`index.json`** at `/.well-known/skills/` enumerates all published skills with SHA-256 digests for integrity verification
+- **Single artifact per skill**: each skill is either a `SKILL.md` file (`type: "skill-md"`) or an archive (`type: "archive"`)
 - **Progressive disclosure**: 3-level loading (index metadata → SKILL.md → supporting files on demand)
-- **Skill-level digest**: deterministic hash computed from sorted file entries using `{path}\0{hex}\n` manifest format, then SHA-256'd
-- **Per-file digest**: `sha256:{64-char-hex}` format for individual file integrity
+- **Digest**: `sha256:{64-char-hex}` format, always the SHA-256 of the skill's single artifact (SKILL.md or archive bytes)
 - The spec uses RFC 2119/8174 keyword conventions (MUST, SHOULD, etc.)
 
 ## Working on This Repo
 
 When editing `README.md`, maintain consistency with RFC 2119 keyword casing conventions. The spec version is tracked in both the frontmatter metadata at the top and in the index format examples throughout.
 
-When editing reference implementations in `examples/`, all four implementations must stay in sync — they implement the same algorithm (scan skill directories, parse YAML frontmatter from SKILL.md, compute SHA-256 digests, output v0.2.0 index JSON). Changes to the index format require updating all four examples.
+When editing reference implementations in `examples/`, all four implementations must stay in sync — they implement the same algorithm (scan skill directories, parse YAML frontmatter from SKILL.md, compute SHA-256 digests, output v0.2.0 index JSON). The reference implementations only generate `type: "skill-md"` entries. Changes to the index format require updating all four examples.
