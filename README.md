@@ -36,7 +36,7 @@ This document defines a mechanism for discovering [Agent Skills](https://agentsk
 - each skill is distributed as a single artifact: either a `SKILL.md` file (`type: "skill-md"`) or an archive (`type: "archive"`)
 - add required `type` field to skill entries for discriminated union dispatch
 - add required `url` field to skill entries pointing to the skill artifact
-- add `version` field to `index.json`; define strict `M.m.p` versioning scheme
+- add `$schema` field to `index.json` identifying the index schema version via a versioned URI
 - add per-skill content digest (`digest` field) for integrity verification; digest is the SHA-256 of the skill's single artifact
 - add RFC 2119 / RFC 8174 keyword conventions
 - strengthen script execution guidance — clients SHALL NOT execute scripts by default
@@ -165,20 +165,21 @@ Publishers MUST provide an index at `/.well-known/agent-skills/index.json`. The 
 
 ### Versioning
 
-The index MUST include a top-level `version` field conforming to `M.m.p` format (major.minor.patch), where M, m, and p are non-negative integers with no leading zeros.
+The index MUST include a top-level `$schema` field containing a URI that identifies the index schema version. The current schema URI is:
 
-- **Major** (`M`): Incremented for backward-incompatible changes to the index schema. Clients encountering an unrecognized major version SHOULD reject the index and warn the user.
-- **Minor** (`m`): Incremented for backward-compatible additions (new optional fields, new sections). Clients MUST ignore unrecognized fields.
-- **Patch** (`p`): Incremented for clarifications or editorial changes that do not affect the schema.
-- Pre-1.0 versions (major = 0) MAY include breaking changes in minor releases.
+```
+https://schemas.agentskills.io/discovery/0.2.0/schema.json
+```
 
-Clients MUST parse the `version` field before processing the index. If `version` is absent, clients SHOULD treat the index as v0.1.0 for backward compatibility.
+The `$schema` URI is an **opaque identifier**. Clients MUST match it against known schema URIs to determine how to process the index. The URI does not need to be resolvable, though it MAY point to a [JSON Schema](https://json-schema.org/) document that describes the index format.
+
+Clients encountering an unrecognized `$schema` URI SHOULD warn the user and SHOULD NOT process the index. If `$schema` is absent, clients SHOULD treat the index as v0.1.0 for backward compatibility. Clients MUST ignore unrecognized fields.
 
 ### Index Format
 
 ```json
 {
-  "version": "0.2.0",
+  "$schema": "https://schemas.agentskills.io/discovery/0.2.0/schema.json",
   "skills": [
     {
       "name": "code-review",
@@ -198,13 +199,13 @@ Clients MUST parse the `version` field before processing the index. If `version`
 }
 ```
 
-The index contains a top-level `version` field and a `skills` array.
+The index contains a top-level `$schema` field and a `skills` array.
 
 **Top-level fields:**
 
 | Field | Required | Description |
 |-------|----------|-------------|
-| `version` | Yes | Index schema version in `M.m.p` format. Current version is `0.2.0`. |
+| `$schema` | Yes | URI identifying the index schema version. See [Versioning](#versioning). |
 | `skills` | Yes | Array of skill entries. |
 
 **Skill entry fields:**
@@ -238,9 +239,9 @@ Clients encountering an unrecognized `type` value SHOULD skip that skill entry a
 
 The v0.2.0 index format is not backward-compatible with v0.1.0. Key differences:
 
-- v0.1.0 used `files` as an array of path strings with no digests. v0.2.0 removes `files` entirely, adds `type`, `url`, `digest`, and `version`.
+- v0.1.0 used `files` as an array of path strings with no digests. v0.2.0 removes `files` entirely, adds `type`, `url`, `digest`, and `$schema`.
 
-Clients MUST check the `version` field to determine how to process the index. Since the major version is still 0, breaking changes in minor versions are expected per the [versioning rules](#versioning).
+Clients MUST check the `$schema` field to determine how to process the index. An unrecognized `$schema` URI indicates the index structure may have changed incompatibly; see [Versioning](#versioning).
 
 ## Integrity and Verification
 
@@ -362,7 +363,7 @@ For configuration options, see [references/CONFIGURATION.md](references/CONFIGUR
 
 ```json
 {
-  "version": "0.2.0",
+  "$schema": "https://schemas.agentskills.io/discovery/0.2.0/schema.json",
   "skills": [
     {
       "name": "code-review",
@@ -415,7 +416,7 @@ Clients discovering skills from a well-known endpoint MUST:
 
 1. **Fetch `index.json`.** Retrieve `/.well-known/agent-skills/index.json` to enumerate available skills.
 
-2. **Check version.** Parse the `version` field. If absent, treat the index as v0.1.0. If the major version is unrecognized, warn the user and abort. Clients MUST ignore unrecognized fields.
+2. **Check schema version.** Match the `$schema` field against known schema URIs. If absent, treat the index as v0.1.0. Clients SHOULD NOT process an index with an unrecognized `$schema` URI and SHOULD warn the user. Clients MUST ignore unrecognized fields.
 
 3. **Use digests for caching.** Compare each skill's `digest` against locally cached values. If the digest matches, the skill is unchanged and the client MAY skip re-downloading.
 
