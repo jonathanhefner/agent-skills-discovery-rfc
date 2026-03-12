@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Is
 
-This is an RFC specification document for **Agent Skills Discovery via Well-Known URIs** (currently v0.2.0, Draft status). It defines how organizations publish discoverable Agent Skills at `/.well-known/skills/` using RFC 8615. The primary artifact is `README.md`, which contains the full specification text.
+This is an RFC specification document for **Agent Skills Discovery via Well-Known URIs** (currently v0.2.0, Draft status). It defines how organizations publish discoverable Agent Skills at `/.well-known/agent-skills/` using RFC 8615. The primary artifact is `README.md`, which contains the full specification text.
 
 There is no build system, package manager, test suite, or CI pipeline. This is a documentation-first repo.
 
@@ -29,7 +29,7 @@ This branch (`pr6-updates`) is based on the `v0.2.0` branch from the `upstream` 
 
 ## Key Spec Concepts
 
-- **`index.json`** at `/.well-known/skills/` enumerates all published skills with SHA-256 digests for integrity verification
+- **`index.json`** at `/.well-known/agent-skills/` enumerates all published skills with SHA-256 digests for integrity verification
 - **Single artifact per skill**: each skill is either a `SKILL.md` file (`type: "skill-md"`) or an archive (`type: "archive"`)
 - **Progressive disclosure**: 3-level loading (index metadata → SKILL.md → supporting files on demand)
 - **Digest**: `sha256:{64-char-hex}` format, always the SHA-256 of the skill's single artifact (SKILL.md or archive bytes)
