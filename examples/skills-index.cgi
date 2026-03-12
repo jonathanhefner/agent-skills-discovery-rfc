@@ -24,6 +24,7 @@ use JSON::PP;
 
 # Configure this path to match your setup
 my $skills_dir = $ENV{SKILLS_DIR} || '/var/www/html/.well-known/agent-skills';
+my $schema_uri = 'https://schemas.agentskills.io/discovery/0.2.0/schema.json';
 
 print "Content-Type: application/json\r\n";
 print "Cache-Control: public, max-age=300\r\n\r\n";
@@ -93,7 +94,7 @@ if (opendir(my $dh, $skills_dir)) {
     closedir($dh);
 } else {
     # Directory doesn't exist - return empty array
-    print encode_json({ version => '0.2.0', skills => [] });
+    print encode_json({ '$schema' => $schema_uri, skills => [] });
     exit 0;
 }
 
@@ -102,4 +103,4 @@ if (opendir(my $dh, $skills_dir)) {
 
 # Ensure consistent field ordering in JSON output
 my $json = JSON::PP->new->canonical(1);
-print $json->encode({ version => '0.2.0', skills => \@skills });
+print $json->encode({ '$schema' => $schema_uri, skills => \@skills });

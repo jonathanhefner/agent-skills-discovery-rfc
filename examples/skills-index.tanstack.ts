@@ -28,6 +28,8 @@ interface Skill {
 	digest: string;
 }
 
+const SCHEMA_URI = "https://schemas.agentskills.io/discovery/0.2.0/schema.json";
+
 /** SHA-256 digest of a buffer, formatted as sha256:{hex} */
 function sha256(data: Buffer): string {
 	return `sha256:${createHash("sha256").update(data).digest("hex")}`;
@@ -42,7 +44,7 @@ export const APIRoute = createAPIFileRoute("/.well-known/agent-skills/index.json
 			entries = await readdir(skillsDir, { withFileTypes: true });
 		} catch (error) {
 			if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-				return Response.json({ version: "0.2.0", skills: [] });
+				return Response.json({ $schema: SCHEMA_URI, skills: [] });
 			}
 			throw error;
 		}
@@ -79,6 +81,6 @@ export const APIRoute = createAPIFileRoute("/.well-known/agent-skills/index.json
 
 		skills.sort((a, b) => a.name.localeCompare(b.name));
 
-		return Response.json({ version: "0.2.0", skills });
+		return Response.json({ $schema: SCHEMA_URI, skills });
 	},
 });
