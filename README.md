@@ -33,11 +33,12 @@ This document defines a mechanism for discovering [Agent Skills](https://agentsk
 
 #### v0.2.0
 
-- each skill is distributed as a single artifact: either a `SKILL.md` file (`type: "skill-md"`) or an archive (`type: "archive"`)
-- add required `type` field to skill entries for discriminated union dispatch
-- add required `url` field to skill entries pointing to the skill artifact
-- add `$schema` field to `index.json` identifying the index schema version via a versioned URI
-- add per-skill content digest (`digest` field) for integrity verification; digest is the SHA-256 of the skill's single artifact
+- rename well-known URI from `/.well-known/skills/` to `/.well-known/agent-skills/`
+- replace `version` field with `$schema` URI (`https://schemas.agentskills.io/discovery/0.2.0/schema.json`)
+- replace `files` array and `package` object with a flat single-artifact model: each skill entry now has `type` (`"skill-md"` or `"archive"`), `url`, and `digest`
+- `digest` is now the SHA-256 of the single artifact (not a manifest-derived skill-level digest)
+- add archive safety guidance: path traversal, symlinks, decompression bombs
+- add URL resolution semantics per RFC 3986
 - add RFC 2119 / RFC 8174 keyword conventions
 - strengthen script execution guidance — clients SHALL NOT execute scripts by default
 - add "Integrity and Verification" section
@@ -423,6 +424,7 @@ Clients discovering skills from a well-known endpoint MUST:
 4. **Fetch and verify skill artifacts.** For skills that need updating:
    - For `type: "skill-md"`: Download `SKILL.md` from the skill's `url`. Compute its SHA-256 and verify against `digest`.
    - For `type: "archive"`: Download the archive from the skill's `url`. Compute its SHA-256 and verify against `digest`. Unpack the archive and validate its structure (see [Archive Safety](#archive-safety)).
+   - For an unrecognized `type`: Skip the skill entry and warn the user.
 
 5. **Apply progressive disclosure.** Load only `name` and `description` at discovery time. Load `SKILL.md` when a skill is activated. For archive-based skills, load supporting resources (scripts, references, assets) on demand as the task requires.
 
@@ -435,6 +437,8 @@ Clients discovering skills from a well-known endpoint MUST:
 The security considerations from [RFC 8615 Section 4](https://datatracker.ietf.org/doc/html/rfc8615#section-4) apply. Additional considerations for skills:
 
 - **Trust**: Skills contain instructions and executable code. Agents should only use skills from trusted origins. See the [Agent Skills security guidance](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview#security-considerations).
+- **Prompt injection**: Skill content is loaded directly into agent context. A malicious `SKILL.md` can inject instructions that alter agent behavior. Clients SHOULD validate that skill artifacts originate from trusted, allowlisted domains before loading them into context.
+- **Origin allowlisting**: Clients SHOULD maintain a configurable allowlist of trusted domains from which skills may be fetched. Skills from origins not on the allowlist SHOULD be rejected unless the user explicitly approves them.
 - **Access control**: Servers should control write access to `/.well-known/agent-skills/` carefully, especially in shared hosting environments.
 - **Script execution**: Clients SHALL NOT execute files under `scripts/` by default. Clients SHALL consider implementing a permissions model that only executes scripts bundled with a skill when explicitly allowed by the user or client configuration. Refer to the [Agent Skills specification](https://agentskills.io/specification) guidance on script execution.
 - **Digest verification**: Clients MUST verify artifact digests after download. A digest mismatch indicates the content has been tampered with or is stale; clients MUST NOT use unverified content.
